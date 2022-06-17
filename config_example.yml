@@ -1,0 +1,77 @@
+appName: JiraMetrics
+
+# How to connect to JIRA.
+# You can generate your apikey at https://id.atlassian.com/manage-profile/security/api-tokens
+Connection:
+    Domain: http://your_jira_instance.atlassian.net/ # your JIRA instance
+    Username: Your_jira_login # your jira login
+    ApiKey: Secret_here # your api token/key
+
+# Google Slides config
+# Squadname - The squad name
+# Presentationid - the id of the presentation that you want to modify the google api email should be invited as an editor
+# TIP: You can find this id in the url when you open the slide
+# Query - a JQL query to gather data, if you are smart you will remove Epics, Sub-tasks and other items like the example bellow.
+# NOTE: if you add more than 1 issuetype on JQL all of them must share the same workflow statuses!
+Gslides:
+    Squadname: Your squad name
+    Smallsquadname: squad
+    Notes: Sample slide text
+    Presentationid: Your_presentation id here
+
+# Query - a JQL query to gather data, if you are smart you will remove Epics, Sub-tasks and other items like the example bellow.
+# NOTE: if you add more than 1 issuetype on JQL all of them must share the same workflow statuses!
+# NOTE2: if you are using the Gslides feature it should not include resolution dates filters the script will provide that for you
+Query: project = AG AND issuetype not in (Epic, Sub-task, Bug-task) AND resolution in (Done)
+
+
+# Workflow - you can group status in a similar way that you group more than 1 status in a column in your jira board
+# NOTE: since we recover from issue history, odd old status from past workflows should be also added here
+Workflow: 
+    Backlog: Backlog
+    Selected for Development: 
+        - Selected for Development
+        - Refinement
+    In Progress: 
+        - In Progress
+        - 3rd Interview
+    Review: Review
+    Done: Done
+
+# Right now you can't change the 3 types: Story, Bug, Task, but you can group other jira issuetypes in each of those 3 options
+Issuetype:
+    Story: Story
+    Bug: Bug
+    Task: 
+        - Task
+        - Technical Debt
+
+# Cycletime - A list of which columns the script should consider to calculate the cycletime
+# Percentiles - that the script should return
+# NOTE: for now cycletime percentiles and montecarlo percentiles should match
+Cycletime:
+    Status:
+        - In Progress
+        - Review
+        - Done
+    Percentiles:
+        - 50
+        - 85
+        - 95
+
+# Simulations - how many simulations we should run 10k should give you a good result
+# Source - Which Throughput/day we should use to run the simulation, must be Story, Bug, Task or Throughput (sum of all 3)
+# Percentiles - that the script should return, the script will return the nearest neighbor result
+# NOTE: for now cycletime percentiles and montecarlo percentiles should match
+# Simulation Dates - The start and end date of the Montecarlo simulation
+# NOTE: If you are using the Gslides feature the Simulation Dates will be ignored as the script will provide these for you 
+Montecarlo:
+    Simulations: 10000
+    Source: 
+        - Story
+    Percentiles:
+        - 50
+        - 85
+        - 95
+    Simulation Start Date: 2021-02-07
+    Simulation End Date: 2021-03-10
