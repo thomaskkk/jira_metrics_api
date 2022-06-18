@@ -313,226 +313,23 @@ def gather_metrics_data(jql_query):
 
     return kanban_data
 
-"""
-def metrics_by_month():
-    current_month = dt.datetime.now().month
-    months_after = (current_month - 1) % 3
-    quarter = ((current_month - 1) // 3) + 1
+
+def metrics():
     jql_query = str(cfg['Query'])
     simulations = cfg['Montecarlo']['Simulations'].get()
     mc_sources = cfg['Montecarlo']['Source'].get()
-
-    # Past quarter results and 1st month forecast
-    start_date, end_date = jql_search_range(0)
-    kanban_data = gather_metrics_data(
-        jql_query + 'AND resolutiondate >= "{}" AND resolutiondate <= "{}"'
-        .format(start_date, end_date))
+    kanban_data = gather_metrics_data(jql_query)
     ct = calc_cycletime_percentile(kanban_data, 85)
-    tp = calc_throughput(kanban_data, start_date, end_date)
+    tp = calc_throughput(kanban_data)
     mc = simulate_montecarlo(
         tp, sources=mc_sources,
         simul=simulations,
-        simul_days=simul_days_range(0))
+        simul_days=14)
+    """
     if tp is not None:
         tp = tp.sum(axis=0)
-    text_replace = {
-            "[s_squad_name]": cfg['Gslides']['Smallsquadname'].get(),
-            "[squad_name]": cfg['Gslides']['Squadname'].get(),
-            "[quarter]": "Q" + str(quarter),
-            "[thpqs]": str(getattr(tp, "Story", 0)),
-            "[thpqt]": str(getattr(tp, "Task", 0)),
-            "[thpqb]": str(getattr(tp, "Bug", 0)),
-            "[th_pq_tot]": "{} items".format(getattr(tp, "Throughput", 0)),
-            "[ctpqs]": "{}d".format(math.ceil(getattr(ct, "Story", 0))),
-            "[ctpqt]": "{}d".format(math.ceil(getattr(ct, "Task", 0))),
-            "[ctpqb]": "{}d".format(math.ceil(getattr(ct, "Bug", 0))),
-            "[ct_pq_tot]": "{}d (85%)".format(
-                math.ceil(getattr(ct, "Total", 0))),
-            "[mc_1_95]": "{} items (US only)".format(
-                get_dict_value(mc, 'Story', 95, 0)),
-            "[mc_1_85]": "{} items (US only)".format(
-                get_dict_value(mc, 'Story', 85, 0)),
-            "[mc_1_50]": "{} items (US only)".format(
-                get_dict_value(mc, 'Story', 50, 0)),
-            "[th1s]": "",
-            "[th1t]": "",
-            "[th1b]": "",
-            "[th_1_tot]": "",
-            "[ct1s]": "",
-            "[ct1t]": "",
-            "[ct1b]": "",
-            "[ct_1_tot]": "",
-            "[mc_2_95]": "",
-            "[mc_2_85]": "",
-            "[mc_2_50]": "",
-            "[th2s]": "",
-            "[th2t]": "",
-            "[th2b]": "",
-            "[th_2_tot]": "",
-            "[ct2s]": "",
-            "[ct2t]": "",
-            "[ct2b]": "",
-            "[ct_2_tot]": "",
-            "[mc_3_95]": "",
-            "[mc_3_85]": "",
-            "[mc_3_50]": "",
-            "[th3s]": "",
-            "[th3t]": "",
-            "[th3b]": "",
-            "[th_3_tot]": "",
-            "[thcqs]": "",
-            "[thcqt]": "",
-            "[thcqb]": "",
-            "[th_cq_tot]": "",
-            "[ct3s]": "",
-            "[ct3t]": "",
-            "[ct3b]": "",
-            "[ct_3_tot]": "",
-            "[mc_nq_95]": "",
-            "[mc_nq_85]": "",
-            "[mc_nq_50]": "",
-            "[notes]": cfg['Gslides']['Notes'].get() + " - Extraído em {}"
-            .format(dt.date.today())
-        }
-
-    thcqs = 0
-    thcqt = 0
-    thcqb = 0
-    th_cq_tot = 0
-
-    # 1st month results and 2st month forecast
-    start_date, end_date = jql_search_range(1)
-    kanban_data = gather_metrics_data(
-        jql_query + 'AND resolutiondate >= "{}" AND resolutiondate <= "{}"'
-        .format(start_date, end_date))
-    ct = calc_cycletime_percentile(kanban_data, 85)
-    mctp = calc_throughput(kanban_data, start_date, end_date)
-    mc = simulate_montecarlo(
-        mctp, sources=mc_sources,
-        simul=simulations,
-        simul_days=simul_days_range(1))
-    tp_start, tp_end = throughput_range(1)
-    tp = calc_throughput(kanban_data, start_date=tp_start, end_date=tp_end)
-    if tp is not None:
-        tp = tp.sum(axis=0)
-    text_replace["[th1s]"] = str(getattr(tp, "Story", 0))
-    thcqs += int(getattr(tp, "Story", 0))
-    text_replace["[th1t]"] = str(getattr(tp, "Task", 0))
-    thcqt += int(getattr(tp, "Task", 0))
-    text_replace["[th1b]"] = str(getattr(tp, "Bug", 0))
-    thcqb += int(getattr(tp, "Bug", 0))
-    text_replace["[th_1_tot]"] = "{} items".format(
-        getattr(tp, "Throughput", 0))
-    th_cq_tot += int(getattr(tp, "Throughput", 0))
-    text_replace["[ct1s]"] = "{}d".format(math.ceil(getattr(ct, "Story", 0)))
-    text_replace["[ct1t]"] = "{}d".format(math.ceil(getattr(ct, "Task", 0)))
-    text_replace["[ct1b]"] = "{}d".format(math.ceil(getattr(ct, "Bug", 0)))
-    text_replace["[ct_1_tot]"] = "{}d (85%)".format(
-        math.ceil(getattr(ct, "Total", 0)))
-    text_replace["[mc_2_95]"] = "{} items (US only)".format(
-        get_dict_value(mc, 'Story', 95, 0)
-        )
-    text_replace["[mc_2_85]"] = "{} items (US only)".format(
-       get_dict_value(mc, 'Story', 85, 0)
-        )
-    text_replace["[mc_2_50]"] = "{} items (US only)".format(
-        get_dict_value(mc, 'Story', 50, 0)
-        )
-
-    if months_after >= 1:
-        # 2nd month results and 3rd month forecast
-        start_date, end_date = jql_search_range(2)
-        kanban_data = gather_metrics_data(
-            jql_query + 'AND resolutiondate >= "{}" AND resolutiondate <= "{}"'
-            .format(start_date, end_date))
-        ct = calc_cycletime_percentile(kanban_data, 85)
-        mctp = calc_throughput(kanban_data, start_date, end_date)
-        mc = simulate_montecarlo(
-            mctp, sources=mc_sources,
-            simul=simulations,
-            simul_days=simul_days_range(2))
-        tp_start, tp_end = throughput_range(2)
-        tp = calc_throughput(kanban_data, start_date=tp_start, end_date=tp_end)
-        if tp is not None:
-            tp = tp.sum(axis=0)
-        text_replace["[th2s]"] = str(getattr(tp, "Story", 0))
-        thcqs += int(getattr(tp, "Story", 0))
-        text_replace["[th2t]"] = str(getattr(tp, "Task", 0))
-        thcqt += int(getattr(tp, "Task", 0))
-        text_replace["[th2b]"] = str(getattr(tp, "Bug", 0))
-        thcqb += int(getattr(tp, "Bug", 0))
-        text_replace["[th_2_tot]"] = "{} items".format(
-            getattr(tp, "Throughput", 0))
-        th_cq_tot += int(getattr(tp, "Throughput", 0))
-        text_replace["[ct2s]"] = "{}d".format(
-            math.ceil(getattr(ct, "Story", 0)))
-        text_replace["[ct2t]"] = "{}d".format(
-            math.ceil(getattr(ct, "Task", 0)))
-        text_replace["[ct2b]"] = "{}d".format(
-            math.ceil(getattr(ct, "Bug", 0)))
-        text_replace["[ct_2_tot]"] = "{}d (85%)".format(
-            math.ceil(getattr(ct, "Total", 0)))
-        text_replace["[mc_3_95]"] = "{} items (US only)".format(
-            get_dict_value(mc, 'Story', 95, 0)
-            )
-        text_replace["[mc_3_85]"] = "{} items (US only)".format(
-           get_dict_value(mc, 'Story', 85, 0)
-            )
-        text_replace["[mc_3_50]"] = "{} items (US only)".format(
-            get_dict_value(mc, 'Story', 50, 0)
-            )
-
-    if months_after >= 2:
-        # 3rd month results, quarter totals and next forecast
-        start_date, end_date = jql_search_range(3)
-        kanban_data = gather_metrics_data(
-            jql_query + 'AND resolutiondate >= "{}" AND resolutiondate <= "{}"'
-            .format(start_date, end_date))
-        ct = calc_cycletime_percentile(kanban_data, 85)
-        mctp = calc_throughput(kanban_data, start_date, end_date)
-        mc = simulate_montecarlo(
-            mctp, sources=mc_sources,
-            simul=simulations,
-            simul_days=simul_days_range(3))
-        tp_start, tp_end = throughput_range(3)
-        tp = calc_throughput(kanban_data, start_date=tp_start, end_date=tp_end)
-        if tp is not None:
-            tp = tp.sum(axis=0)
-        text_replace["[th3s]"] = str(getattr(tp, "Story", 0))
-        thcqs += int(getattr(tp, "Story", 0))
-        text_replace["[th3t]"] = str(getattr(tp, "Task", 0))
-        thcqt += int(getattr(tp, "Task", 0))
-        text_replace["[th3b]"] = str(getattr(tp, "Bug", 0))
-        thcqb += int(getattr(tp, "Bug", 0))
-        text_replace["[th_3_tot]"] = "{} items".format(
-            getattr(tp, "Throughput", 0))
-        th_cq_tot += int(getattr(tp, "Throughput", 0))
-        text_replace["[ct3s]"] = "{}d".format(
-            math.ceil(getattr(ct, "Story", 0)))
-        text_replace["[ct3t]"] = "{}d".format(
-            math.ceil(getattr(ct, "Task", 0)))
-        text_replace["[ct3b]"] = "{}d".format(
-            math.ceil(getattr(ct, "Bug", 0)))
-        text_replace["[ct_3_tot]"] = "{}d (85%)".format(
-            math.ceil(getattr(ct, "Total", 0)))
-        text_replace["[mc_nq_95]"] = "{} items (US only)".format(
-            get_dict_value(mc, 'Story', 95, 0)
-            )
-        text_replace["[mc_nq_85]"] = "{} items (US only)".format(
-           get_dict_value(mc, 'Story', 85, 0)
-            )
-        text_replace["[mc_nq_50]"] = "{} items (US only)".format(
-            get_dict_value(mc, 'Story', 50, 0)
-            )
-
-    # Fill quarter totals
-    text_replace["[thcqs]"] = str(thcqs)
-    text_replace["[thcqt]"] = str(thcqt)
-    text_replace["[thcqb]"] = str(thcqb)
-    text_replace["[th_cq_tot]"] = "{} items".format(str(th_cq_tot))
-
-    return text_replace
-"""
+    """
+    return mc
 
 
 def get_dict_value(dict, key1, key2, default=None):
@@ -542,60 +339,14 @@ def get_dict_value(dict, key1, key2, default=None):
         return dict[key1][key2]
 
 
-def jql_search_range(metrics_month):
-    """Return a tupple with 2 dates, start_date from the 1st day 3 months back
-    and end_date in the 1st of the current month"""
-
-    today = dt.date.today()
-    months_to_past_quarter = ((today.month - 1) % 3)
-    start_month = (metrics_month - months_to_past_quarter) - 3
-    end_month = (metrics_month - months_to_past_quarter) - 1
-
-    start_date = today + relativedelta(day=1, months=start_month)
-    end_date = today + relativedelta(day=31, months=end_month)
-
-    return start_date, end_date
-
-
-def throughput_range(metrics_month):
-    """Return two objects with date range of the current metrics month"""
-
-    today = dt.date.today()
-    months_to_past_quarter = ((today.month - 1) % 3)
-    start_month = (metrics_month - months_to_past_quarter) - 1
-    end_month = (metrics_month - months_to_past_quarter) - 1
-
-    start_date = today + relativedelta(day=1, months=start_month)
-    end_date = today + relativedelta(day=31, months=end_month)
-
-    return start_date, end_date
-
-
-def simul_days_range(metrics_month):
-    """Return the number of days from current month until
-    the end of the quarter """
-
-    today = dt.date.today()
-    months_to_past_quarter = ((today.month - 1) % 3)
-    start_month = ((metrics_month + 1) - months_to_past_quarter) - 1
-    months_to_next_quarter = 2 - (today.month - 1) % 3
-    # If asked to forecast next quarter we should add 3 months
-    if metrics_month == 3:
-        months_to_next_quarter += 3
-
-    start_date = today + relativedelta(day=1, months=start_month)
-    end_date = today + relativedelta(day=31, months=months_to_next_quarter)
-
-    return (end_date - start_date).days
-
-
 def main():
     if os.path.exists("config"):
         for root, dirs, files in os.walk("config"):
             for name in files:
                 cfg.set_file(os.path.join(root, name))
                 print("Processing: {}".format(os.path.join(root, name)))
-                # text_replace = metrics_by_month()
+                mc = metrics()
+                print(mc)
     elif os.path.isfile('config_test.yml'):
         cfg.set_file('config_test.yml')
     else:

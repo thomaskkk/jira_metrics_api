@@ -7,23 +7,10 @@ Connection:
     Username: Your_jira_login # your jira login
     ApiKey: Secret_here # your api token/key
 
-# Google Slides config
-# Squadname - The squad name
-# Presentationid - the id of the presentation that you want to modify the google api email should be invited as an editor
-# TIP: You can find this id in the url when you open the slide
-# Query - a JQL query to gather data, if you are smart you will remove Epics, Sub-tasks and other items like the example bellow.
-# NOTE: if you add more than 1 issuetype on JQL all of them must share the same workflow statuses!
-Gslides:
-    Squadname: Your squad name
-    Smallsquadname: squad
-    Notes: Sample slide text
-    Presentationid: Your_presentation id here
-
 # Query - a JQL query to gather data, if you are smart you will remove Epics, Sub-tasks and other items like the example bellow.
 # NOTE: if you add more than 1 issuetype on JQL all of them must share the same workflow statuses!
 # NOTE2: if you are using the Gslides feature it should not include resolution dates filters the script will provide that for you
 Query: project = AG AND issuetype not in (Epic, Sub-task, Bug-task) AND resolution in (Done)
-
 
 # Workflow - you can group status in a similar way that you group more than 1 status in a column in your jira board
 # NOTE: since we recover from issue history, odd old status from past workflows should be also added here
