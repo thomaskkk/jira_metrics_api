@@ -15,6 +15,11 @@ api = Api(app)
 cfg = confuse.Configuration('JiraMetricsApi', __name__)
 
 
+class Hello(Resource):
+    def get(self):
+        return {'message': 'All ok!'}
+
+
 class JiraMetricsApi(Resource):
     def __init__(self):
         return
@@ -32,6 +37,33 @@ class JiraMetricsApi(Resource):
             return {"message":  {
                 "filename": "You don't have any valid config files", }}
 
+    def metrics(self):
+        jql_query = str(cfg['Query'])
+        kanban_data = self.gather_metrics_data(jql_query)
+        print(kanban_data)
+        """
+        ct = self.calc_cycletime_percentile(kanban_data, 85)
+        tp = self.calc_throughput(kanban_data)
+        simulations = cfg['Montecarlo']['Simulations'].get()
+        mc_sources = cfg['Montecarlo']['Source'].get()
+        mc = self.simulate_montecarlo(
+            tp, sources=mc_sources,
+            simul=simulations,
+            simul_days=14)
+
+        if tp is not None:
+            tp = tp.sum(axis=0)
+        """
+        return None
+
+    def gather_metrics_data(self, jql_query):
+        jira = self.atlassian_auth()
+        issues = self.jql_search(jira, jql_query)
+        dictio = self.convert_cfd_table(issues)
+        # kanban_data = self.read_dates(dictio)
+
+        return None
+
     def atlassian_auth(self, override_config_filename=None):
         """Authenticate on the Jira Cloud instance"""
 
@@ -46,11 +78,6 @@ class JiraMetricsApi(Resource):
             basic_auth=(username, api)
         )
         return jira
-
-    def jira_status_categories(self, jira_obj):
-        """Fetch jira status categories"""
-        status_categories = jira_obj.statuses()
-        return status_categories
 
     def jql_search(self, jira_obj, jql_query=None):
         """Run a JQL search and return the jira object with results"""
@@ -73,7 +100,7 @@ class JiraMetricsApi(Resource):
         """Convert the issues obj into a dictionary on the cfd format"""
         cfd_table = []
         for issue in issues_obj:
-            # pprint(vars(issue))
+            pprint(vars(issue))
             # start creating our line of the table with field: value
             cfd_line = {}
             cfd_line["issue"] = issue.key
@@ -317,41 +344,11 @@ class JiraMetricsApi(Resource):
         end = cfg['Montecarlo']['Simulation End Date'].get()
         return (end - start).days
 
-    def gather_metrics_data(self, jql_query):
-        jira = self.atlassian_auth()
-        issue = self.jql_search(jira, jql_query)
-        dictio = self.convert_cfd_table(issue)
-        kanban_data = self.read_dates(dictio)
-
-        return kanban_data
-
-    def metrics():
-        jql_query = str(cfg['Query'])
-        simulations = cfg['Montecarlo']['Simulations'].get()
-        mc_sources = cfg['Montecarlo']['Source'].get()
-        kanban_data = self.gather_metrics_data(jql_query)
-        ct = self.calc_cycletime_percentile(kanban_data, 85)
-        tp = self.calc_throughput(kanban_data)
-        mc = self.simulate_montecarlo(
-            tp, sources=mc_sources,
-            simul=simulations,
-            simul_days=14)
-        """
-        if tp is not None:
-            tp = tp.sum(axis=0)
-        """
-        return mc
-
     def get_dict_value(self, dict, key1, key2, default=None):
         if not dict or dict[key1] is None or dict[key1][key2] is None:
             return default
         else:
             return dict[key1][key2]
-
-
-class Hello(Resource):
-    def get(self):
-        return {'message': 'All ok!'}
 
 
 api.add_resource(Hello, '/')
