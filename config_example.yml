@@ -1,4 +1,4 @@
-appName: JiraMetrics
+appName: JiraMetricsApi
 
 # How to connect to JIRA.
 # You can generate your apikey at https://id.atlassian.com/manage-profile/security/api-tokens
@@ -9,21 +9,7 @@ Connection:
 
 # Query - a JQL query to gather data, if you are smart you will remove Epics, Sub-tasks and other items like the example bellow.
 # NOTE: if you add more than 1 issuetype on JQL all of them must share the same workflow statuses!
-# NOTE2: if you are using the Gslides feature it should not include resolution dates filters the script will provide that for you
 Query: project = AG AND issuetype not in (Epic, Sub-task, Bug-task) AND resolution in (Done)
-
-# Workflow - you can group status in a similar way that you group more than 1 status in a column in your jira board
-# NOTE: since we recover from issue history, odd old status from past workflows should be also added here
-Workflow: 
-    Backlog: Backlog
-    Selected for Development: 
-        - Selected for Development
-        - Refinement
-    In Progress: 
-        - In Progress
-        - 3rd Interview
-    Review: Review
-    Done: Done
 
 # Right now you can't change the 3 types: Story, Bug, Task, but you can group other jira issuetypes in each of those 3 options
 Issuetype:

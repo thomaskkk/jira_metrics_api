@@ -76,4 +76,4 @@ config_test.yml
 .vscode/
 
 #config
-config/*
+secrets/*
